@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using System.IO;
 
-using Newtonsoft.Json;
+using Jil;
 
 using Google.Apis.Classroom.v1;
 using Google.Apis.Drive.v3;
@@ -13,7 +13,11 @@ namespace classroom_scraper
     {
         static async Task Main(string[] args)
         {
-            OAuthSignIn auth = new OAuthSignIn();
+            var input = new StreamReader(@".\apikey.json");
+            dynamic config =  JSON.DeserializeDynamic(input);
+            input.Close();
+            OAuthSignIn auth = new OAuthSignIn((string)config.clientid, (string)config.clientsecret);
+            
             /*
             https://www.googleapis.com/auth/classroom.announcements	                        View and manage announcements in Google Classroom
             https://www.googleapis.com/auth/classroom.announcements.readonly	            View announcements in Google Classroom
@@ -68,7 +72,7 @@ namespace classroom_scraper
                 announcementsRequest.OauthToken = token;
                 var announcements = announcementsRequest.Execute().Announcements;
                 System.IO.File.WriteAllText(String.Format(@".\output\{0}.json", course.Name), 
-                JsonConvert.SerializeObject(announcements));
+                JSON.SerializeDynamic(announcements));
                 
                 DriveService driveService = new DriveService();
                 foreach (var announcement in announcements)
@@ -80,6 +84,10 @@ namespace classroom_scraper
                             if (material.DriveFile != null)
                             {
                                 var fileRequest = driveService.Files.Get(material.DriveFile.DriveFile.Id);
+                                if (false)
+                                {
+                                    //fileRequest = driveService.Files.Export(material.DriveFile.DriveFile.Id, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+                                }
                                 fileRequest.OauthToken = token;
                                 var stream = new MemoryStream();
                                 fileRequest.MediaDownloader.ProgressChanged += (Google.Apis.Download.IDownloadProgress progress) =>
