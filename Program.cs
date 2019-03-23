@@ -13,7 +13,7 @@ namespace classroom_scraper
     {
         static async Task Main(string[] args)
         {
-            var input = new StreamReader(@".\apikey.json");
+            var input = new StreamReader(@".\config.json");
             dynamic config =  JSON.DeserializeDynamic(input);
             input.Close();
             OAuthSignIn auth = new OAuthSignIn((string)config.clientid, (string)config.clientsecret);
@@ -84,10 +84,6 @@ namespace classroom_scraper
                             if (material.DriveFile != null)
                             {
                                 var fileRequest = driveService.Files.Get(material.DriveFile.DriveFile.Id);
-                                if (false)
-                                {
-                                    //fileRequest = driveService.Files.Export(material.DriveFile.DriveFile.Id, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-                                }
                                 fileRequest.OauthToken = token;
                                 var stream = new MemoryStream();
                                 fileRequest.MediaDownloader.ProgressChanged += (Google.Apis.Download.IDownloadProgress progress) =>
@@ -102,11 +98,48 @@ namespace classroom_scraper
                                             }
                                         case Google.Apis.Download.DownloadStatus.Failed:
                                             {
-                                                Console.WriteLine(String.Format("Download failed on file {0}.\n{1}", material.DriveFile.DriveFile.Title, progress.Exception.Message));
+                                                try
+                                                {
+                                                    var driveFile = fileRequest.Execute();
+
+                                                    if (config.exportmimes[driveFile.MimeType] != null)
+                                                    {
+                                                        FilesResource.ExportRequest exportRequest = driveService.Files.Export(material.DriveFile.DriveFile.Id, (string)config.exportmimes[driveFile.MimeType]);
+                                                        exportRequest.OauthToken = token;
+                                                        exportRequest.MediaDownloader.ProgressChanged += (Google.Apis.Download.IDownloadProgress exportProgress) =>
+                                                        {
+                                                            switch (exportProgress.Status)
+                                                            {
+                                                                case Google.Apis.Download.DownloadStatus.Completed:
+                                                                    {
+                                                                        Console.WriteLine(String.Format("Downloaded {0}.", material.DriveFile.DriveFile.Title));
+                                                                        SaveStream(stream, String.Format(@".\output\{0}\{1}.{2}", course.Name, material.DriveFile.DriveFile.Title, (string)config.mimeextensions[exportRequest.MimeType]));
+                                                                        break;
+                                                                    }
+                                                                case Google.Apis.Download.DownloadStatus.Failed:
+                                                                    {
+                                                                        Console.WriteLine(String.Format("Download failed on file {0}.\n{1}", material.DriveFile.DriveFile.Title, exportProgress.Exception.Message));
+                                                                        break;
+                                                                    }
+                                                            }
+                                                        };
+                                                        exportRequest.DownloadAsync(stream);
+                                                    }
+                                                    else
+                                                    {
+                                                        Console.WriteLine(String.Format("Download failed on file {0}.\n{1}", material.DriveFile.DriveFile.Title, progress.Exception.Message));
+                                                    }
+                                                }
+                                                catch (Google.GoogleApiException e)
+                                                {
+                                                    Console.WriteLine(String.Format("Download failed on file {0}.\n{1}", material.DriveFile.DriveFile.Title, e.Message));
+                                                }
+                                                
                                                 break;
                                             }
                                     }
                                 };
+                                
                                 // Synchronous for now
                                 await fileRequest.DownloadAsync(stream);
                             }
