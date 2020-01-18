@@ -324,7 +324,9 @@ namespace classroom_scraper
 
         public void BringConsoleToFront()
         {
-            SetForegroundWindow(GetConsoleWindow());
+            // Broken on mac, probably on linux too
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                SetForegroundWindow(GetConsoleWindow());
         }
 
     }

@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>classroom_scraper</RootNamespace>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Google.Apis.Classroom.v1" Version="1.38.0.1530"/>
-    <PackageReference Include="Google.Apis.Drive.v3" Version="1.38.0.1530"/>
-    <PackageReference Include="Jil" Version="2.17.0"/>
+    <PackageReference Include="Google.Apis.Classroom.v1" Version="1.43.0.1837"/>
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.43.0.1807"/>
+    <PackageReference Include="Jil" Version="3.0.0-alpha2"/>
   </ItemGroup>
 </Project>
